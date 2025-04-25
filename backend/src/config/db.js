@@ -24,7 +24,8 @@ const initDb = async () => {
         title VARCHAR(100) NOT NULL,
         description TEXT,
         due_date DATE,
-        completed BOOLEAN DEFAULT false
+        completed BOOLEAN DEFAULT false,
+        UNIQUE(title, due_date) 
       )
     `);
     
