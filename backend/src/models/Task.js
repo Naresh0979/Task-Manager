@@ -159,9 +159,17 @@ const bulkCreate = async (tasksData) => {
 
     const [result] = await dbConnectionPool.query(query, values);
 
-    // If you want to return inserted tasks, you might fetch them based on IDs.
-    // For now, returning number of inserted records
-    return { insertedCount: result.affectedRows };
+    const insertedCount = result.affectedRows;
+    const firstInsertedId = result.insertId;
+
+    // Fetch the newly inserted tasks
+    const [insertedTasks] = await dbConnectionPool.query(`
+      SELECT * FROM tasks
+      WHERE id BETWEEN ? AND ?
+      ORDER BY id ASC
+    `, [firstInsertedId, firstInsertedId + insertedCount - 1]);
+
+    return insertedTasks;
   } catch (error) {
     throw error;
   }
