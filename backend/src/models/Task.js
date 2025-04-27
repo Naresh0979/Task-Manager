@@ -121,6 +121,54 @@ const create = async (taskData) => {
 };
 
 /**
+ * Create multiple tasks in bulk
+ * @param {Array<Object>} tasksData - Array of task data
+ * @returns {Promise<Array<Object>>} Created tasks
+ */
+const bulkCreate = async (tasksData) => {
+  if (!tasksData.length) return [];
+
+  try {
+    const values = [];
+    const placeholders = [];
+
+    for (const task of tasksData) {
+      const {
+        title,
+        description,
+        dueDate,
+        completed = false
+      } = task;
+
+      const formattedDueDate = formatDate(dueDate);
+      
+      values.push(
+        title,
+        description || null,
+        formattedDueDate,
+        completed ? 1 : 0
+      );
+
+      placeholders.push('(?, ?, ?, ?)');
+    }
+
+    const query = `
+      INSERT INTO tasks (title, description, due_date, completed)
+      VALUES ${placeholders.join(', ')}
+    `;
+
+    const [result] = await dbConnectionPool.query(query, values);
+
+    // If you want to return inserted tasks, you might fetch them based on IDs.
+    // For now, returning number of inserted records
+    return { insertedCount: result.affectedRows };
+  } catch (error) {
+    throw error;
+  }
+};
+
+
+/**
  * Update a task
  * @param {number} id - Task ID
  * @param {Object} taskData - Updated task data
@@ -218,5 +266,6 @@ module.exports = {
   update,
   delete: deleteTask, // Renamed because 'delete' is a reserved keyword
   validate,
-  formatDate
+  formatDate,
+  bulkCreate
 }; 

@@ -12,34 +12,39 @@ async function importTasksFromSheet(sheetUrl) {
   }
 
   const tasks = await fetchSheetData(sheetId);
-  const result = await Task.findAll();
-  const existingTasks = result.tasks || [];
+
+  const existingTasks = await Task.findAll(); // Assuming returns array
   const existingTitles = new Set(existingTasks.map(task => task.title.toLowerCase().trim()));
 
-  const savedTasks = [];
+  const bulkTasks = [];
   const skippedTasks = [];
-  const errors = [];
 
   for (const task of tasks) {
+    const normalizedTitle = task.title.toLowerCase().trim();
+
+    if (existingTitles.has(normalizedTitle)) {
+      skippedTasks.push({ title: task.title, reason: 'Duplicate task title' });
+      continue;
+    }
+
+    bulkTasks.push({
+      title: task.title,
+      description: task.description,
+      dueDate: task.dueDate,
+      completed: task.completed || false
+    });
+
+    existingTitles.add(normalizedTitle);
+  }
+
+  let savedTasks = [];
+  let errors = [];
+
+  if (bulkTasks.length > 0) {
     try {
-      const normalizedTitle = task.title.toLowerCase().trim();
-      if (existingTitles.has(normalizedTitle)) {
-        skippedTasks.push({ title: task.title, reason: 'Duplicate task title' });
-        continue;
-      }
-
-      const simplifiedTask = {
-        title: task.title,
-        description: task.description,
-        dueDate: task.dueDate,
-        completed: task.completed || false
-      };
-
-      const savedTask = await Task.create(simplifiedTask);
-      savedTasks.push(savedTask);
-      existingTitles.add(normalizedTitle);
+      savedTasks = await Task.bulkCreate(bulkTasks); // Faster: bulk insert
     } catch (error) {
-      errors.push({ task: task.title, error: error.message });
+      errors.push({ task: 'Bulk Insert', error: error.message });
     }
   }
 
@@ -50,6 +55,7 @@ async function importTasksFromSheet(sheetUrl) {
     errors: errors.length > 0 ? errors : undefined
   };
 }
+
 
 async function getAllTasks(page = 1, limit = 10) {
   return await Task.findAll({ page, limit });
