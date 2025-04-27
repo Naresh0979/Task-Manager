@@ -46,9 +46,9 @@ const findAll = async (options = {}) => {
     // Get paginated tasks
     const [rows] = await dbConnectionPool.query(`
       SELECT 
-        id, title, description, due_date as dueDate, completed,
+        id, title, description, due_date as dueDate, completed
       FROM tasks
-      ORDER BY dueDate DESC
+      ORDER BY due_date DESC
       LIMIT ? OFFSET ?
     `, [limit, offset]);
     

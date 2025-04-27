@@ -13,20 +13,11 @@ async function importTasksFromSheet(sheetUrl) {
 
   const tasks = await fetchSheetData(sheetId);
 
-  const existingTasks = await Task.findAll(); // Assuming returns array
-  const existingTitles = new Set(existingTasks.map(task => task.title.toLowerCase().trim()));
-
   const bulkTasks = [];
   const skippedTasks = [];
 
   for (const task of tasks) {
-    const normalizedTitle = task.title.toLowerCase().trim();
-
-    if (existingTitles.has(normalizedTitle)) {
-      skippedTasks.push({ title: task.title, reason: 'Duplicate task title' });
-      continue;
-    }
-
+  
     bulkTasks.push({
       title: task.title,
       description: task.description,
@@ -34,7 +25,6 @@ async function importTasksFromSheet(sheetUrl) {
       completed: task.completed || false
     });
 
-    existingTitles.add(normalizedTitle);
   }
 
   let savedTasks = [];
