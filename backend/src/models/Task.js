@@ -47,9 +47,8 @@ const findAll = async (options = {}) => {
     const [rows] = await dbConnectionPool.query(`
       SELECT 
         id, title, description, due_date as dueDate, completed,
-        created_at as createdAt, updated_at as updatedAt
       FROM tasks
-      ORDER BY created_at DESC
+      ORDER BY dueDate DESC
       LIMIT ? OFFSET ?
     `, [limit, offset]);
     
@@ -76,8 +75,7 @@ const findById = async (id) => {
   try {
     const [rows] = await dbConnectionPool.query(`
       SELECT 
-        id, title, description, due_date as dueDate, completed,
-        created_at as createdAt, updated_at as updatedAt
+        id, title, description, due_date as dueDate, completed
       FROM tasks
       WHERE id = ?
     `, [id]);
@@ -191,34 +189,6 @@ const deleteTask = async (id) => {
 };
 
 /**
- * Find a task by sheet ID and row index or create it if it doesn't exist
- * @param {Object} criteria - Search criteria
- * @param {Object} taskData - Task data to create if not found
- * @returns {Promise<Object>} Task object
- */
-const findOneAndUpdate = async (criteria, taskData) => {
-  try {
-    // Check if task exists
-    const { sheetId, rowIndex } = criteria;
-    
-    const [existingTasks] = await dbConnectionPool.query(`
-      SELECT id FROM tasks
-      WHERE sheet_id = ? AND row_index = ?
-    `, [sheetId, rowIndex]);
-    
-    if (existingTasks.length > 0) {
-      // Update existing task
-      return update(existingTasks[0].id, taskData);
-    } else {
-      // Create new task
-      return create(taskData);
-    }
-  } catch (error) {
-    throw error;
-  }
-};
-
-/**
  * Validates task data
  * @param {Object} taskData - Task data to validate
  * @throws {Error} Validation error
@@ -247,7 +217,6 @@ module.exports = {
   create,
   update,
   delete: deleteTask, // Renamed because 'delete' is a reserved keyword
-  findOneAndUpdate,
   validate,
   formatDate
 }; 
